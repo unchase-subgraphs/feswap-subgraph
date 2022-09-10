@@ -1,62 +1,63 @@
-import { BigInt } from "@graphprotocol/graph-ts"
-import { Factory, PairCreated } from "../generated/Factory/Factory"
-import { ExampleEntity } from "../generated/schema"
+/* eslint-disable prefer-const */
+import { Pair, Token } from "../generated/schema";
+import { Pair as PairTemplate } from "../generated/templates";
+import { PairCreated } from "../generated/Factory/Factory";
+import {
+  ZERO_BD,
+  fetchTokenSymbol,
+  fetchTokenName,
+  fetchTokenDecimals,
+} from "./utils";
 
 export function handlePairCreated(event: PairCreated): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from.toHex())
-
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from.toHex())
-
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
+  let token0 = Token.load(event.params.tokenA.toHex());
+  if (token0 === null) {
+    token0 = new Token(event.params.tokenA.toHex());
+    token0.name = fetchTokenName(event.params.tokenA);
+    token0.symbol = fetchTokenSymbol(event.params.tokenA);
+    let decimals = fetchTokenDecimals(event.params.tokenA);
+    if (decimals === null) {
+      return;
+    }
+    token0.decimals = decimals;
+    token0.save();
   }
 
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
+  let token1 = Token.load(event.params.tokenB.toHex());
+  if (token1 === null) {
+    token1 = new Token(event.params.tokenB.toHex());
+    token1.name = fetchTokenName(event.params.tokenB);
+    token1.symbol = fetchTokenSymbol(event.params.tokenB);
+    let decimals = fetchTokenDecimals(event.params.tokenB);
+    if (decimals === null) {
+      return;
+    }
+    token1.decimals = decimals;
+    token1.save();
+  }
 
-  // Entity fields can be set based on event parameters
-  entity.tokenA = event.params.tokenA
-  entity.tokenB = event.params.tokenB
+  let pairAAB = new Pair(event.params.pairAAB.toHex()) as Pair;
+  pairAAB.token0 = token0.id;
+  pairAAB.token1 = token1.id;
+  pairAAB.reserve0 = ZERO_BD;
+  pairAAB.reserve1 = ZERO_BD;
+  pairAAB.token0Price = ZERO_BD;
+  pairAAB.token1Price = ZERO_BD;
+  pairAAB.createdAtBlockNumber = event.block.number;
+  pairAAB.createdAtTimestamp = event.block.timestamp;
+  pairAAB.save();
 
-  // Entities can be written to the store with `.save()`
-  entity.save()
+  let pairABB = new Pair(event.params.pairABB.toHex()) as Pair;
+  pairABB.token0 = token1.id;
+  pairABB.token1 = token0.id;
+  pairABB.reserve0 = ZERO_BD;
+  pairABB.reserve1 = ZERO_BD;
+  pairABB.token0Price = ZERO_BD;
+  pairABB.token1Price = ZERO_BD;
+  pairABB.createdAtBlockNumber = event.block.number;
+  pairABB.createdAtTimestamp = event.block.timestamp;
+  pairABB.save();
 
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
-
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.DELEGATE_TARGET(...)
-  // - contract.RATE_CAP_TRIGGER_ARBITRAGE(...)
-  // - contract.RATE_PROFIT_SHARE(...)
-  // - contract.RATE_TRIGGER_FACTORY(...)
-  // - contract.allPairs(...)
-  // - contract.allPairsLength(...)
-  // - contract.createUpdatePair(...)
-  // - contract.factoryAdmin(...)
-  // - contract.feeTo(...)
-  // - contract.getFeeInfo(...)
-  // - contract.getPair(...)
-  // - contract.getPairTokens(...)
-  // - contract.nftFeSwap(...)
-  // - contract.rateCapArbitrage(...)
-  // - contract.rateProfitShare(...)
-  // - contract.rateTriggerFactory(...)
-  // - contract.routerFeSwap(...)
-  // - contract.twinPairs(...)
+  PairTemplate.create(event.params.pairAAB);
+  PairTemplate.create(event.params.pairABB);
 }

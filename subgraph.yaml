@@ -1,4 +1,4 @@
-specVersion: 0.0.4
+specVersion: 0.0.5
 description: FeSwap is an AMM DEX protocol with no commission fee.
 repository: https://github.com/unchase-subgraphs/feswap-subgraph
 schema:
@@ -13,7 +13,7 @@ dataSources:
       startBlock: 22215071
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
         - Pair
@@ -39,7 +39,7 @@ templates:
       abi: Pair
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.7
       language: wasm/assemblyscript
       file: ./src/core.ts
       entities:
